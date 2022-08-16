@@ -110,7 +110,7 @@ public void OnPluginStart()
 	LoadTranslations((g_iEngine = GetEngineVersion()) == Engine_SourceSDK2006 ? "lr_core_old.phrases" : "lr_core.phrases");
 	LoadTranslations("lr_module_exhits.phrases");
 
-	HookEvent("player_hurt", view_as<EventHook>(OnPlayerHurt));
+	HookEvent("player_hurt", OnPlayerHurt);
 
 	if(LR_IsLoaded())
 	{
@@ -153,7 +153,7 @@ void LoadDataPlayer(int iClient, int iAccountID)
 	g_hDatabase.Query(SQL_Callback, sQuery, GetClientUserId(iClient));
 }
 
-void OnPlayerHurt(Event hEvent)
+void OnPlayerHurt(Event hEvent, char[] sEvName, bool bDontBroadcast)
 {
 	int iAttacker = GetClientOfUserId(hEvent.GetInt("attacker"));
 
@@ -251,6 +251,8 @@ int MenuShowInfo_Callback(Menu hMenu, MenuAction mAction, int iClient, int iSlot
 	{
 		hMenu.Close();
 	}
+
+	return 0;
 }
 
 void SaveDataPlayer(int iClient, Transaction hTransaction)
