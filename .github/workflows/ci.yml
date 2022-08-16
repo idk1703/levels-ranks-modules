@@ -29,8 +29,8 @@ jobs:
       - name: Run compiler
         run: |
           wget https://github.com/fuckOff1703/levels-ranks-core/raw/1703/addons/sourcemod/scripting/include/lvl_ranks.inc -O $includePath/lvl_ranks.inc
-          bash .github/compile.sh levels-ranks-modules
-          
+          bash .github/compile.sh ${{ github.workspace }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:

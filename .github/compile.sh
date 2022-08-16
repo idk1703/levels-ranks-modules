@@ -25,7 +25,7 @@ do
 		echo "Source name: $noext_file"
 		echo "---------------------------------------------------------------"
 		bin_file=$noext_file'.smx'
-		spcomp $src_file -o=$plugins/$bin_file ${@:2} || exit 1
+		spcomp $src_file -o=$plugins/$bin_file ${@:2}
 	done
 	
 	cd - > /dev/null
