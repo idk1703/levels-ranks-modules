@@ -9,9 +9,9 @@
 #define PLUGIN_NAME "[LR] Module - ExoJumpBoots"
 #define PLUGIN_AUTHOR "RoadSide Romeo & R1KO"
 
-int		g_iLevel;
-bool		g_bActive[MAXPLAYERS+1];
-Handle	g_hCookie;
+int g_iLevel;
+bool g_bActive[MAXPLAYERS+1];
+Cookie g_hCookie;
 
 public Plugin myinfo = {name = PLUGIN_NAME, author = PLUGIN_AUTHOR, version = PLUGIN_VERSION};
 public void OnPluginStart()
@@ -26,10 +26,9 @@ public void OnPluginStart()
 		LR_OnCoreIsReady();
 	}
 
-	g_hCookie = RegClientCookie("LR_ExoJumpBoots", "LR_ExoJumpBoots", CookieAccess_Private);
+	g_hCookie = new Cookie("LR_ExoJumpBoots", "LR_ExoJumpBoots", CookieAccess_Private);
 	LoadTranslations("lr_module_exojumpboots.phrases");
 	HookEvent("player_spawn", PlayerSpawn);
-	ConfigLoad();
 
 	for(int iClient = 1; iClient <= MaxClients; iClient++)
 	{
@@ -46,6 +45,7 @@ public void LR_OnCoreIsReady()
 	{
 		SetFailState(PLUGIN_NAME ... " : This module will work if [ lr_type_statistics 0 ]");
 	}
+	ConfigLoad();
 
 	LR_Hook(LR_OnSettingsModuleUpdate, ConfigLoad);
 	LR_MenuHook(LR_SettingMenu, LR_OnMenuCreated, LR_OnMenuItemSelected);
@@ -65,12 +65,12 @@ void ConfigLoad()
 	hLR.Close();
 }
 
-public void PlayerSpawn(Handle hEvent, char[] sEvName, bool bDontBroadcast)
+public void PlayerSpawn(Event hEvent, char[] sEvName, bool bDontBroadcast)
 {	
-	int iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
-	if(iClient && IsClientInGame(iClient) && !g_bActive[iClient] && LR_GetClientInfo(iClient, ST_RANK) >= g_iLevel)
+	int iClient = GetClientOfUserId(hEvent.GetInt("userid"));
+	if(iClient && IsClientInGame(iClient) && g_bActive[iClient] && LR_GetClientInfo(iClient, ST_RANK) >= g_iLevel)
 	{
-		SetEntProp(iClient, Prop_Send, "m_passiveItems", view_as<int>(true), 1, 1);
+		SetEntProp(iClient, Prop_Send, "m_passiveItems", view_as<int>(true), 1, 1); // wtf ?
 	}
 }
 
@@ -79,7 +79,7 @@ void LR_OnMenuCreated(LR_MenuType OnMenuType, int iClient, Menu hMenu)
 	char sText[64];
 	if(LR_GetClientInfo(iClient, ST_RANK) >= g_iLevel)
 	{
-		FormatEx(sText, sizeof(sText), "%T", !g_bActive[iClient] ? "ExoJumpBoots_On" : "ExoJumpBoots_Off", iClient);
+		FormatEx(sText, sizeof(sText), "%T", g_bActive[iClient] ? "ExoJumpBoots_On" : "ExoJumpBoots_Off", iClient);
 		hMenu.AddItem("ExoJumpBoots", sText);
 	}
 	else
@@ -94,6 +94,11 @@ void LR_OnMenuItemSelected(LR_MenuType OnMenuType, int iClient, const char[] sIn
 	if(!strcmp(sInfo, "ExoJumpBoots"))
 	{
 		g_bActive[iClient] = !g_bActive[iClient];
+
+		char sCookie[2];
+		sCookie[0] = '0' + view_as<char>(g_bActive[iClient]);
+		g_hCookie.Set(iClient, sCookie);
+
 		LR_ShowMenu(iClient, LR_SettingMenu);
 	}
 }
@@ -101,24 +106,11 @@ void LR_OnMenuItemSelected(LR_MenuType OnMenuType, int iClient, const char[] sIn
 public void OnClientCookiesCached(int iClient)
 {
 	char sCookie[2];
-	GetClientCookie(iClient, g_hCookie, sCookie, sizeof(sCookie));
-	g_bActive[iClient] = sCookie[0] == '1';
+	g_hCookie.Get(iClient, sCookie, sizeof(sCookie));
+	g_bActive[iClient] = (!sCookie[0]) ? true : (sCookie[0]  == '1');
 }
 
 public void OnClientDisconnect(int iClient)
 {
-	char sCookie[2];
-	sCookie[0] = '0' + view_as<char>(g_bActive[iClient]);
-	SetClientCookie(iClient, g_hCookie, sCookie);
-}
-
-public void OnPluginEnd()
-{
-	for(int iClient = 1; iClient <= MaxClients; iClient++)
-	{
-		if(IsClientInGame(iClient))
-		{
-			OnClientDisconnect(iClient);
-		}
-	}
+	g_bActive[iClient] = false;
 }
