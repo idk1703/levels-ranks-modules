@@ -9,10 +9,9 @@
 #define PLUGIN_NAME "[LR] Module - Defuser"
 #define PLUGIN_AUTHOR "RoadSide Romeo"
 
-int		g_iLevel,
-		m_bHasDefuser = -1;
-bool		g_bActive[MAXPLAYERS+1];
-Handle	g_hCookie;
+int g_iLevel, m_bHasDefuser = -1;
+bool g_bActive[MAXPLAYERS+1];
+Cookie g_hCookie;
 
 public Plugin myinfo = {name = PLUGIN_NAME, author = PLUGIN_AUTHOR, version = PLUGIN_VERSION};
 public void OnPluginStart()
@@ -22,7 +21,7 @@ public void OnPluginStart()
 		LR_OnCoreIsReady();
 	}
 
-	g_hCookie = RegClientCookie("LR_Defuser", "LR_Defuser", CookieAccess_Private);
+	g_hCookie = new Cookie("LR_Defuser", "LR_Defuser", CookieAccess_Private);
 	m_bHasDefuser = FindSendPropInfo("CCSPlayer", "m_bHasDefuser");
 	if(m_bHasDefuser == -1)
 	{
@@ -70,7 +69,7 @@ void ConfigLoad()
 public void PlayerSpawn(Event event, const char []name, bool dontBroadcast)
 {
 	int iClient = GetClientOfUserId(event.GetInt("userid"));
-	if(LR_GetClientInfo(iClient, ST_RANK) >= g_iLevel && !g_bActive[iClient] && GetClientTeam(iClient) == 3)
+	if(LR_GetClientInfo(iClient, ST_RANK) >= g_iLevel && g_bActive[iClient] && GetClientTeam(iClient) == 3)
 	{
 		if(GetEntData(iClient, m_bHasDefuser) != 1)
 		{
@@ -84,7 +83,7 @@ void LR_OnMenuCreated(LR_MenuType OnMenuType, int iClient, Menu hMenu)
 	char sText[64];
 	if(LR_GetClientInfo(iClient, ST_RANK) >= g_iLevel)
 	{
-		FormatEx(sText, sizeof(sText), "%T", !g_bActive[iClient] ? "Defuser_On" : "Defuser_Off", iClient);
+		FormatEx(sText, sizeof(sText), "%T", g_bActive[iClient] ? "Defuser_On" : "Defuser_Off", iClient);
 		hMenu.AddItem("Defuser", sText);
 	}
 	else
@@ -99,6 +98,11 @@ void LR_OnMenuItemSelected(LR_MenuType OnMenuType, int iClient, const char[] sIn
 	if(!strcmp(sInfo, "Defuser"))
 	{
 		g_bActive[iClient] = !g_bActive[iClient];
+
+		char sCookie[2];
+		sCookie[0] = '0' + view_as<char>(g_bActive[iClient]);
+		g_hCookie.Set(iClient, sCookie);
+
 		LR_ShowMenu(iClient, LR_SettingMenu);
 	}
 }
@@ -106,24 +110,11 @@ void LR_OnMenuItemSelected(LR_MenuType OnMenuType, int iClient, const char[] sIn
 public void OnClientCookiesCached(int iClient)
 {
 	char sCookie[2];
-	GetClientCookie(iClient, g_hCookie, sCookie, sizeof(sCookie));
-	g_bActive[iClient] = sCookie[0] == '1';
+	g_hCookie.Get(iClient, sCookie, sizeof(sCookie));
+	g_bActive[iClient] = (!sCookie[0]) ? true : (sCookie[0]  == '1');
 }
 
 public void OnClientDisconnect(int iClient)
 {
-	char sCookie[2];
-	sCookie[0] = '0' + view_as<char>(g_bActive[iClient]);
-	SetClientCookie(iClient, g_hCookie, sCookie);
-}
-
-public void OnPluginEnd()
-{
-	for(int iClient = 1; iClient <= MaxClients; iClient++)
-	{
-		if(IsClientInGame(iClient))
-		{
-			OnClientDisconnect(iClient);
-		}
-	}
+	g_bActive[iClient] = false;
 }
