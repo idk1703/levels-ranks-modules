@@ -452,7 +452,7 @@ public void SQL_LoadDataPlayer(Database db, DBResultSet dbRs, const char[] sErro
 		else
 		{
 			char sQuery[640];
-			g_hDatabase.Format(sQuery, sizeof(sQuery), "INSERT INTO `%s_maps` (`steam`, `name_map`, `countplays`, `kills`, `deaths`, `rounds_overall`, `rounds_ct`, `rounds_t`, `bomb_planted`, `bomb_defused`, `hostage_rescued`, `hostage_killed`, `playtime`) VALUES ('STEAM_%i:%i:%i', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d');", g_sTableName, g_iEngine == Engine_CSGO, g_iClient[iClient].AccountID & 1, g_iClient[iClient].AccountID >>> 1, g_sCurrentMap, g_iClient[iClient].MapCountPlay, g_iClient[iClient].MapCountKills, g_iClient[iClient].MapCountDeaths, g_iClient[iClient].MapCountRoundsOverall, g_iClient[iClient].MapCountRound[CT], g_iClient[iClient].MapCountRound[iClient][T], g_iClient[iClient].MapCountBPlanted, g_iClient[iClient].MapCountBDefused, g_iClient[iClient].MapCountHRescued, g_iClient[iClient].MapCountHKilled, g_iClient[iClient].MapCountTime);
+			g_hDatabase.Format(sQuery, sizeof(sQuery), "INSERT INTO `%s_maps` (`steam`, `name_map`, `countplays`, `kills`, `deaths`, `rounds_overall`, `rounds_ct`, `rounds_t`, `bomb_planted`, `bomb_defused`, `hostage_rescued`, `hostage_killed`, `playtime`) VALUES ('STEAM_%i:%i:%i', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d');", g_sTableName, g_iEngine == Engine_CSGO, g_iClient[iClient].AccountID & 1, g_iClient[iClient].AccountID >>> 1, g_sCurrentMap, g_iClient[iClient].MapCountPlay, g_iClient[iClient].MapCountKills, g_iClient[iClient].MapCountDeaths, g_iClient[iClient].MapCountRoundsOverall, g_iClient[iClient].MapCountRound[CT], g_iClient[iClient].MapCountRound[T], g_iClient[iClient].MapCountBPlanted, g_iClient[iClient].MapCountBDefused, g_iClient[iClient].MapCountHRescued, g_iClient[iClient].MapCountHKilled, g_iClient[iClient].MapCountTime);
 			g_hDatabase.Query(SQL_CreateDataPlayer, sQuery, GetClientUserId(iClient));
 		}
 	}
@@ -520,12 +520,24 @@ void DatabaseCleanup(LR_CleanupType iType, Transaction hQuery)
 {
 	if(iType == LR_AllData || iType == LR_StatsData)
 	{
-		char sQuery[768];
+		char sQuery[768], sEndQuery[64];
 
 		FormatEx(sQuery, sizeof(sQuery), "DROP TABLE IF EXISTS `%s_maps`;", g_sTableName);
 		hQuery.AddQuery(sQuery);
 
-		FormatEx(sQuery, sizeof(sQuery), g_sCreateTable, g_sTableName, LR_GetDatabaseType() ? ";" : " CHARSET=utf8 COLLATE utf8_general_ci");
+		if(LR_GetDatabaseType())
+		{
+			sEndQuery = ";";
+		}
+		else
+		{
+			char sCharset[8], sCharsetType[16];
+			sCharset = LR_GetSettingsValue(LR_DB_Allow_UTF8MB4) ? "utf8mb4" : "utf8";
+			sCharsetType = LR_GetSettingsValue(LR_DB_Charset_Type) ? "_unicode_ci" : "_general_ci";
+			FormatEx(sEndQuery, sizeof(sEndQuery), " CHARSET=%s COLLATE %s%s", sCharset, sCharset, sCharsetType);
+		}
+		
+		FormatEx(sQuery, sizeof(sQuery), g_sCreateTable, g_sTableName, sEndQuery);
 		hQuery.AddQuery(sQuery);
 	}
 }
