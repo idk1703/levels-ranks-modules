@@ -387,7 +387,7 @@ void MapsStats(int iClient)
 	}
 	else
 	{
-		FormatEx(sBuffer, sizeof(sBuffer), "%T", "MapStatistics_Custom", iClient, g_iClient[iClient].MapCountRound[iClient][CT], g_iClient[iClient].MapCountRound[iClient][T]);
+		FormatEx(sBuffer, sizeof(sBuffer), "%T", "MapStatistics_Custom", iClient, g_iClient[iClient].MapCountRound[CT], g_iClient[iClient].MapCountRound[T]);
 	}
 
 	FormatEx(sBufferKDStats, sizeof(sBufferKDStats), "%T", "MapStatistics_KDStats", iClient, g_iClient[iClient].MapCountKills, g_iClient[iClient].MapCountDeaths, g_iClient[iClient].MapCountKills / (g_iClient[iClient].MapCountDeaths ? float(g_iClient[iClient].MapCountDeaths) : 1.0));
